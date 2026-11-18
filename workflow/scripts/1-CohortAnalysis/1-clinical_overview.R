@@ -126,48 +126,46 @@ toPlot <- toPlot %>%
     prop_ecDNA = n_ecDNA_pos / n_samples * 100,
     plot_label = paste0(first(cancer_code), " (n=", n_samples, ")"),
     .groups = "drop"
-  ) |> as.data.frame()
-
-
-# -- new code
-toPlot <- toPlot %>%
+  ) %>%
   arrange(cancer, cancer_code) %>%
   mutate(
     plot_label = as.character(plot_label)
-  )
+  ) %>% as.data.frame()
 
-plot_levels <- toPlot %>%
-  group_by(cancer) %>%
-  summarise(labels = list(plot_label), .groups = "drop") %>%
-  pull(labels) %>%
-  map(~ c(.x, "")) %>%
-  unlist()
+# helper function (split into two rows)
+plot_prop <- function(p) {
+    toPlot <- toPlot[toPlot$cancer %in% p,]
+    p <- ggplot(toPlot, aes(x = plot_label, y = prop_ecDNA, fill = cancer)) +
+    geom_hline(yintercept = c(25, 50, 75), color = "gray", alpha = 0.5) +
+    geom_col() +
+    facet_grid(~ cancer, scales = "free_x", space = "free_x") +
+    scale_fill_manual(values = palette_20[2:20]) +
+    scale_y_continuous(
+        labels = function(x) paste0(x, "%"),
+        expand = c(0, 0)
+    ) +
+    theme_classic() +
+    theme(
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.y = element_text(size = 7),
+        strip.background = element_blank(),
+        strip.text.x = element_text(size = 5),
+        panel.spacing.x = unit(0.4, "lines"),
+        axis.title.x = element_blank(),
+        legend.position = "none"
+    ) +
+    labs(y = "ecDNA+ (%)")
+    return(p)
+}
 
-toPlot$plot_label <- factor(toPlot$plot_label,levels = unique(plot_levels))
+p1 <- plot_prop(order_cancer[1:10])
+p2 <- plot_prop(order_cancer[11:length(order_cancer)])
 
-p <- ggplot(toPlot, aes(x = plot_label, y = prop_ecDNA, fill = cancer)) +
-  geom_hline(yintercept = c(25, 50, 75), color = "gray", alpha = 0.5) +
-  geom_col() +
-  facet_grid(~ cancer, scales = "free_x", space = "free_x") +
-  scale_y_continuous(
-    labels = function(x) paste0(x, "%"),
-    expand = c(0, 0)
-  ) +
-  theme_classic() +
-  theme(
-    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
-    axis.text.y = element_text(size = 6),
-    axis.title.y = element_text(size = 9),
-    strip.background = element_blank(),
-    strip.text.x = element_text(size = 5),
-    panel.spacing.x = unit(0.4, "lines"),
-    axis.title.x = element_blank(),
-    legend.position = "none"
-  ) +
-  labs(y = "ecDNA+ samples (%)")
+p <- p1 / p2
 
 filename <- "data/results/figures/1-CohortAnalysis/ecDNA_cancercode_prop.png"
-ggsave(filename, p, width = 15, height = 2.5)
+ggsave(filename, p, width = 8, height = 3.5)
 
 ###########################################################
 # Count ecDNA per cancer type
