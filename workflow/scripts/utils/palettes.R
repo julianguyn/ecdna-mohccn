@@ -18,6 +18,11 @@ binary_pal3 <- c(
     "#C3B59F"
 )
 
+ecDNA_status_pal <- c(
+    "ecDNA+" = "#957D95",
+    "ecDNA-" = "white"
+)
+
 amplicon_class_pal <- c(
     "BFB" = "#CC9979",
     "Complex-non-cyclic" = "#ECB8A5",
