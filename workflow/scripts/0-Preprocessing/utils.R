@@ -6,6 +6,7 @@
 #' 
 process_cohort_names <- function(df) {
 
+  PM2C_results <- df[df$cohort %in% PM2C_cohorts,]
   BCCA_results <- df[-which(df$cohort %in% PM2C_cohorts),]
 
   for (cohort in BCCA_cohorts) {
