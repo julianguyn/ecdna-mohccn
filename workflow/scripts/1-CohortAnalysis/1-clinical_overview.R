@@ -24,9 +24,8 @@ all_samples <- readRDS(paste0(PROCDATA_DIR, "AA_processed/sample_df.rds"))
 AA_results <- AA_results[AA_results$Centre == "PM2C",]
 all_samples <- all_samples[all_samples$Centre == "PM2C",]
 
-# load in ID mappping file
-map <- read.table("data/rawdata/ID_mapping_20260925/MOHCCN_PM2C_ID_map.tsv", header = TRUE)
-map$match_id <- sub("^(([^-]+-){2}[^-]+)-.*", "\\1", map$PM2C_SAMPLE_ID)
+# load in ID mapping file
+map <- read.csv("data/procdata/clinical/ID_mapping.csv")
 
 # load in cancer type
 oncotree <- read.csv(paste0(PROCDATA_DIR, "clinical/oncotree.csv"))
@@ -64,28 +63,23 @@ ggsave(filename, p, width = 7.5, height = 7)
 # Bin distribution of age
 ###########################################################
 
-# -------- SEND TO MATTHEW
-table(all_samples$sample %in% map$OICR_SAMPLE_FILE) #43 samples missing the PM2C_SAMPLE_ID
-t1 <- all_samples$sample[-which(all_samples$sample %in% map$OICR_SAMPLE_FILE)]
-table(age$submitter_donor_id %in% map$match_id) #138 samples missing OICR_SAMPLE_ID
-t2 <- age$submitter_donor_id[-which(age$submitter_donor_id %in% map$match_id)]
+table(all_samples$sample %in% map$OICR_SAMPLE_FILE)
 
-write.csv(t1, file = "data/temp/missing_PM2C_SAMPLE_ID.csv", quote = F, row.names = F)
-write.csv(t2, file = "data/temp/missing_OICR_SAMPLE_ID.csv", quote = F, row.names = F)
+to_match <- map$match_id[map$OICR_SAMPLE_FILE %in% all_samples$sample]
+age <- age[age$submitter_donor_id %in% to_match,]
 
-
-# TODO: map samples first
-table(age$submitter_donor_id %in% map$match_id)
-# missing mapping: 138
+missing_age <- nrow(all_samples) - nrow(age)
+# missing age: 90
 
 toPlot <- data.frame(
-    Bin = c("1-20", "21-40", "41-60", "61-80", "81-100"),
+    Bin = c("1-20", "21-40", "41-60", "61-80", "81-100", "NA"),
     Count = c(
         nrow(age[age$age_at_diagnosis_min <= 20,]),
         nrow(age[age$age_at_diagnosis_min > 20 & age$age_at_diagnosis_min <= 40,]),
         nrow(age[age$age_at_diagnosis_min > 40 & age$age_at_diagnosis_min <= 60,]),
         nrow(age[age$age_at_diagnosis_min > 60 & age$age_at_diagnosis_min <= 80,]),
-        nrow(age[age$age_at_diagnosis_min > 80,])
+        nrow(age[age$age_at_diagnosis_min > 80,]),
+        missing_age
     )
 )
 
@@ -100,7 +94,7 @@ p <- ggplot(toPlot, aes(x = Bin, y = Count)) +
     theme_classic() +
     labs(x = "Age Range", y = "Number of Participants")
 filename <- "data/results/figures/1-CohortAnalysis/age_count.png"
-ggsave(filename, p, width = 3, height = 4)
+ggsave(filename, p, width = 4, height = 4)
 
 ###########################################################
 # Keep only ecDNA
