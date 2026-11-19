@@ -82,3 +82,34 @@ palette_20 <- c(
   "#B8A4C4", "#8B7A9A",
   "#A89080", "#6E5A4A"
 )
+
+cancer_pal <- c(
+  "PANCREAS" = "#4A4464",
+  "HEAD_NECK" = "#A5668B",
+  "BILIARY_TRACT" = "#D1CDBA",
+  "LYMPH" = "#D4C4D9",
+  "LUNG" = "#6B5B7A",
+  "BREAST" = "#D6BE94",
+  "SKIN" = "#7B684A",
+  "LIVER" = "#E8E1D9",
+  "OVARY" = "#895B1E",
+  "BOWEL" = "#8797AF",
+  "KIDNEY" = "#56667A",
+  "THYROID" = "#AE6474",
+  "UTERUS" = "#6d3c46",
+  "SOFT_TISSUE" = "#c8cac7",
+  "ADRENAL_GLAND" = "#36709A",
+  "BLADDER" = "#7DB3DA",
+  "PROSTATE" = "#A97C73",
+  "EYE" = "#CEB3AB",
+  "OTHER" = "#72756d",
+  "CERVIX" = "#4E6E5D",
+  "STOMACH" = "#889379",
+  "BONE" = "#CFCFCF",
+  "PNS" = "#AF3E4D",
+  "PENIS" = "#554348",
+  "AMPULLA_OF_VATER" = "#C47335",
+  "BRAIN" = "#E4A673",
+  "THYMUS" = "#797A9E",
+  "VULVA" = "#B59DA4"
+)

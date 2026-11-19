@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
     library(scales)
     library(tidyverse)
     library(patchwork)
+    library(tidytext)
 })
 
 PROCDATA_DIR <- "data/procdata/"
@@ -46,15 +47,18 @@ toPlot$Var1 <- factor(toPlot$Var1, levels = rev(toPlot$Var1))
 # keep order of cancer types
 order_cancer <- toPlot$Var1
 
-p <- ggplot(toPlot, aes(y = Var1, x = Freq)) +
-    geom_bar(stat = "identity", color = "black", fill = olive) +
+p <- ggplot(toPlot, aes(y = Var1, x = Freq, fill = Var1)) +
+    geom_bar(stat = "identity", color = "black") +
     geom_text(
             aes(label = Freq),
             hjust = -0.3,
             color = "black",
             size = 3
         ) +
+    scale_fill_manual(values = cancer_pal) +
+    scale_x_continuous(expand = expansion(add = c(0, 20))) +
     theme_classic() +
+    theme(legend.position = "none") +
     labs(y = "Cancer Type", x = "Number of Participants")
 filename <- "data/results/figures/1-CohortAnalysis/cancertype_count.png"
 ggsave(filename, p, width = 7.5, height = 7)
@@ -121,10 +125,19 @@ toPlot <- toPlot %>%
     plot_label = paste0(first(cancer_code), " (n=", n_samples, ")"),
     .groups = "drop"
   ) %>%
-  arrange(cancer, cancer_code) %>%
+  group_by(cancer) %>%
+  mutate(
+    plot_label = reorder(plot_label, n_samples)
+  ) %>%
+  ungroup() %>%
+  arrange(cancer, desc(n_samples)) %>%
   mutate(
     plot_label = as.character(plot_label)
-  ) %>% as.data.frame()
+  ) %>%
+  as.data.frame()
+
+toPlot <- toPlot %>%
+  mutate(plot_label = reorder_within(plot_label, -n_samples, cancer))
 
 # helper function (split into two rows)
 plot_prop <- function(p) {
@@ -133,7 +146,8 @@ plot_prop <- function(p) {
     geom_hline(yintercept = c(25, 50, 75), color = "gray", alpha = 0.5) +
     geom_col() +
     facet_grid(~ cancer, scales = "free_x", space = "free_x") +
-    scale_fill_manual(values = palette_20[2:20]) +
+    scale_fill_manual(values = cancer_pal) +
+    scale_x_reordered() +
     scale_y_continuous(
         labels = function(x) paste0(x, "%"),
         expand = c(0, 0)
