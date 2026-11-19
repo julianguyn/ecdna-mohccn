@@ -218,12 +218,38 @@ toPlot <- table(ecDNA$'Sample name') |> as.data.frame()
 toPlot$cancer <- oncotree$oncotree_root[match(toPlot$Var1, oncotree$samples)]
 toPlot <- toPlot[order(toPlot$Freq, decreasing = TRUE),]
 toPlot$Var1 <- factor(toPlot$Var1, levels = rev(toPlot$Var1))
+toPlot$cancer <- factor(toPlot$cancer, levels = names(cancer_pal))
 
-p <- ggplot(toPlot, aes(x = cancer, y = Freq)) +
-    geom_boxplot(color = "black", fill = olive) +
+p <- ggplot(toPlot, aes(x = cancer, y = Freq, fill = cancer)) +
     geom_jitter(alpha = 0.5, width = 0.2) +
+    geom_boxplot(color = "black", outlier.shape = NA) +
+    scale_fill_manual(values = cancer_pal) +
     theme_classic() + 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-    labs(x = "Cancer Type", y = "Number of ecDNA Molecules")
+    theme(
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.title.x = element_blank(),
+        legend.position = "none"
+    ) +
+    labs(y = "Number of ecDNA Molecules")
 filename <- "data/results/figures/1-CohortAnalysis/ecDNA_cancertype_count.png"
+ggsave(filename, p, width = 5, height = 5)
+
+###########################################################
+# Count ecDNA per cancer type
+###########################################################
+
+ecDNA$cancer <- factor(ecDNA$cancer, levels = names(cancer_pal))
+
+p <- ggplot(ecDNA, aes(x = cancer, y = log2(.data[["Feature median copy number"]]), fill = cancer)) +
+    geom_jitter(alpha = 0.5, width = 0.2) +
+    geom_boxplot(color = "black", outlier.shape = NA) +
+    scale_fill_manual(values = cancer_pal) +
+    theme_classic() + 
+    theme(
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.title.x = element_blank(),
+        legend.position = "none"
+    ) +
+    labs(y = "log2 Median Copy Number")
+filename <- "data/results/figures/1-CohortAnalysis/ecDNA_cancertype_cn.png"
 ggsave(filename, p, width = 5, height = 5)
