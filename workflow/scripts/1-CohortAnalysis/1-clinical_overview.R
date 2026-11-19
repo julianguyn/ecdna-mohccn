@@ -44,9 +44,6 @@ toPlot <- table(all_samples$cancer) |> as.data.frame()
 toPlot <- toPlot[order(toPlot$Freq, decreasing = TRUE),]
 toPlot$Var1 <- factor(toPlot$Var1, levels = rev(toPlot$Var1))
 
-# keep order of cancer types
-order_cancer <- toPlot$Var1
-
 p <- ggplot(toPlot, aes(y = Var1, x = Freq, fill = Var1)) +
     geom_bar(stat = "identity", color = "black") +
     geom_text(
@@ -107,14 +104,52 @@ ggsave(filename, p, width = 4, height = 4)
 ecDNA <- AA_results[AA_results$Classification == "ecDNA",]
 ecDNA$cancer <- oncotree$oncotree_root[match(ecDNA$'Sample name', oncotree$samples)]
 
+# format toPlot
+toPlot <- all_samples[,c("sample", "cancer", "cancer_code")]
+toPlot$ecDNA <- ifelse(toPlot$sample %in% ecDNA$'Sample name', "ecDNA+", "ecDNA-")
+toPlot$cancer <- factor(toPlot$cancer, levels = names(cancer_pal))
+
 ###########################################################
 # Proportion with ecDNA per cancer type
 ###########################################################
 
-# format toPlot
-toPlot <- all_samples[,c("sample", "cancer", "cancer_code")]
-toPlot$ecDNA <- ifelse(toPlot$sample %in% ecDNA$'Sample name', "ecDNA+", "ecDNA-")
-toPlot$cancer <- factor(toPlot$cancer, levels = order_cancer)
+plot_df <- toPlot %>%
+  group_by(cancer) %>%
+  summarise(
+    n = n(),
+    n_ecDNA_pos = sum(ecDNA == "ecDNA+"),
+    prop_ecDNA_pos = n_ecDNA_pos / n,
+    .groups = "drop"
+  )
+p <- ggplot(plot_df, aes(x = cancer, y = prop_ecDNA_pos, fill = cancer)) +
+  geom_bar(stat = "identity") +
+  geom_text(
+    aes(
+      y = prop_ecDNA_pos / 2,
+      label = ifelse(prop_ecDNA_pos == 0, "", paste0(round(prop_ecDNA_pos * 100, 0), "%")),
+      color = ifelse(cancer %in% c("PANCREAS", "UTERUS"), "white", "black")
+    ),
+    size = 3
+  ) +
+  scale_color_identity() +
+  scale_fill_manual(values = cancer_pal) +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 8),
+    legend.position = "none",
+    axis.title.x = element_blank(),
+    axis.title.y = element_text(size = 10),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  ) +
+  labs(y = "ecDNA+ (%)")
+filename <- "data/results/figures/1-CohortAnalysis/ecDNA_cancertype_prop.png"
+ggsave(filename, p, width = 8, height = 3.5)
+
+###########################################################
+# Proportion with ecDNA per cancer code
+###########################################################
 
 toPlot <- toPlot %>%
   group_by(cancer_code, cancer) %>%
@@ -167,8 +202,8 @@ plot_prop <- function(p) {
     return(p)
 }
 
-p1 <- plot_prop(order_cancer[1:10])
-p2 <- plot_prop(order_cancer[11:length(order_cancer)])
+p1 <- plot_prop(names(cancer_pal)[1:10])
+p2 <- plot_prop(names(cancer_pal)[11:length(names(cancer_pal))])
 
 p <- p1 / p2
 
