@@ -24,6 +24,7 @@ all_samples <- readRDS(paste0(PROCDATA_DIR, "AA_processed/sample_df.rds"))
 # ------------------------- removing BCCA for now!!!!
 AA_results <- AA_results[AA_results$Centre == "PM2C",]
 all_samples <- all_samples[all_samples$Centre == "PM2C",]
+all_samples$cohort <- droplevels(all_samples$cohort)
 
 # load in ID mapping file
 map <- read.csv("data/procdata/clinical/ID_mapping.csv")
@@ -45,7 +46,7 @@ toPlot <- toPlot[order(toPlot$Freq, decreasing = TRUE),]
 toPlot$Var1 <- factor(toPlot$Var1, levels = rev(toPlot$Var1))
 
 p <- ggplot(toPlot, aes(y = Var1, x = Freq, fill = Var1)) +
-    geom_bar(stat = "identity", color = "black") +
+    geom_bar(stat = "identity", color = "black", linewidth = 0.2) +
     geom_text(
             aes(label = Freq),
             hjust = -0.3,
@@ -58,7 +59,46 @@ p <- ggplot(toPlot, aes(y = Var1, x = Freq, fill = Var1)) +
     theme(legend.position = "none") +
     labs(y = "Cancer Type", x = "Number of Participants")
 filename <- "data/results/figures/1-CohortAnalysis/cancertype_count.png"
-ggsave(filename, p, width = 7.5, height = 7)
+ggsave(filename, p, width = 7, height = 6.5)
+
+###########################################################
+# Number of samples per cohort
+###########################################################
+
+toPlot <- table(all_samples$cohort, all_samples$cancer) |> as.data.frame()
+toPlot <- toPlot[order(toPlot$Freq, decreasing = TRUE),]
+
+to_order <- table(all_samples$cohort) |> as.data.frame()
+to_order <- to_order[order(to_order$Freq, decreasing = TRUE),]
+
+toPlot$Var1 <- factor(toPlot$Var1, levels = rev(to_order$Var1))
+toPlot$Var2 <- factor(toPlot$Var2, levels = rev(names(cancer_pal)))
+toPlot$label <- to_order$Freq[match(toPlot$Var1, to_order$Var1)]
+
+p <- ggplot(toPlot, aes(y = Var1, x = Freq, fill = Var2)) +
+    geom_bar(stat = "identity", color = "black", linewidth = 0.2) +
+    geom_text(
+        data = toPlot %>%
+            group_by(Var1) %>%
+            summarise(
+                Freq = sum(Freq),
+                label = first(label),
+                .groups = "drop"
+            ),
+        aes(y = Var1, x = Freq, label = label),
+        inherit.aes = FALSE, hjust = -0.3, color = "black", size = 3
+    ) +
+    scale_fill_manual("Cancer Type", values = cancer_pal, breaks = rev(levels(toPlot$Var2))) +
+    scale_x_continuous(expand = expansion(add = c(0, 20))) +
+    theme_classic() +
+    theme(
+        legend.key.size = unit(4, "mm"),
+        legend.position = c(0.98, 0.02),
+        legend.justification = c(1, 0)
+    ) +
+    labs(y = "Cohort", x = "Number of Participants")
+filename <- "data/results/figures/1-CohortAnalysis/cohort_count.png"
+ggsave(filename, p, width = 6, height = 6)
 
 ###########################################################
 # Bin distribution of age

@@ -60,7 +60,7 @@ toPlot$oncogene <- factor(toPlot$oncogene, levels = rev(top_genes))
 toPlot$cancer <- factor(toPlot$cancer, levels = rev(names(cancer_pal)))
 
 p <- ggplot(toPlot, aes(x = oncogene, fill = cancer)) +
-  geom_bar(position = "stack") +
+  geom_bar(position = "stack", color = "black", linewidth = 0.2) +
   scale_fill_manual("Cancer Type", values = cancer_pal, breaks = rev(levels(toPlot$cancer))) +
   theme_classic() +
   theme(
